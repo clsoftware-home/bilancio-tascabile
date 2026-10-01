@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bilancio Tascabile</title>
+<meta name="theme-color" content="#0E5A52">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Tascabile">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#EEF1EF;--surface:#FFFFFF;--sunk:#E3E8E5;--line:#CCD5D0;
+  --ink:#16201C;--muted:#5B6A63;
+  --accent:#0E5A52;--accent-ink:#FFFFFF;--accent-soft:#D6E8E4;
+  --warn:#8A3F0E;--warn-soft:#F6E2D3;--good:#2D7A3E;--good-soft:#DCEFDF;--bad:#B3261E;--bad-soft:#F6DAD7;
+  --f-d:"Archivo",system-ui,sans-serif;--f-b:"IBM Plex Sans",system-ui,sans-serif;--f-m:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#111715;--surface:#19211E;--sunk:#202A26;--line:#2F3B36;--ink:#E6EDEA;--muted:#93A39C;
+  --accent:#5FC0B2;--accent-ink:#0B1714;--accent-soft:#1D3833;
+  --warn:#F0995A;--warn-soft:#3B2A1E;--good:#7ACB89;--good-soft:#1C3322;--bad:#F2867D;--bad-soft:#3D1F1C;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-b);-webkit-text-size-adjust:100%}
+body{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+.wrap{max-width:560px;margin:0 auto;padding:18px 18px 28px;display:flex;flex-direction:column;gap:14px;min-height:100vh}
+h1{font:800 22px/1.1 var(--f-d);margin:0;letter-spacing:-.01em;white-space:nowrap}h1 span{color:var(--accent)}
+h2{font:800 21px var(--f-d);margin:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hdr{display:flex;align-items:center;gap:10px}
+.back{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:22px;color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.pill{display:inline-flex;align-items:center;gap:6px;font:600 12px var(--f-b);padding:5px 10px;border-radius:99px;white-space:nowrap}
+.pill.ok{background:var(--good-soft);color:var(--good)}.pill.no{background:var(--warn-soft);color:var(--warn)}
+.pill .d{width:7px;height:7px;border-radius:50%;background:currentColor}
+.muted{color:var(--muted)}.small{font-size:12.5px}
+.label{font:600 11px var(--f-b);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.big{display:flex;flex-direction:column;gap:6px;border-radius:16px;padding:20px;text-align:left;cursor:pointer;font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.big.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.big .t{display:flex;align-items:center;gap:12px;font:700 20px var(--f-d)}
+.big .s{font-size:13.5px;opacity:.85}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .l{display:flex;flex-direction:column;gap:2px;min-width:0}
+.row .l b{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st{font:600 11px var(--f-b);padding:2px 8px;border-radius:99px;white-space:nowrap}
+.st.q{background:var(--warn-soft);color:var(--warn)}.st.s{background:var(--good-soft);color:var(--good)}.st.a{background:var(--accent-soft);color:var(--accent)}.st.e{background:var(--bad-soft);color:var(--bad)}
+.btn{font:600 15px var(--f-b);border-radius:12px;padding:0 16px;min-height:50px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.big2{min-height:56px;font:700 17px var(--f-d);width:100%}
+.btn.link{border:0;background:transparent;color:var(--accent);min-height:36px;padding:0}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:12.5px;color:var(--muted);font-weight:500}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;min-width:0}
+input.mono{font-family:var(--f-m);font-size:14px}
+input.amt{font:500 19px var(--f-m);text-align:right}
+select.acc{border-color:var(--accent);color:var(--accent);font-weight:600}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pages{display:flex;gap:8px;overflow-x:auto;padding:10px;background:var(--surface);border:1px dashed var(--line);border-radius:12px;align-items:center}
+.pages .pg{position:relative;flex:none}
+.pages img{width:62px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--line);display:block;background:#fff}
+.pages .x{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);font-size:14px;cursor:pointer}
+.pages .info{font-size:13px;display:flex;flex-direction:column;gap:2px;min-width:140px}
+.box{background:var(--accent-soft);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.box .p{font:500 11.5px/1.45 var(--f-m);word-break:break-word}
+.notice{border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.notice.w{background:var(--warn-soft);color:var(--warn)}.notice.i{background:var(--accent-soft);color:var(--accent)}.notice.e{background:var(--bad-soft);color:var(--bad)}
+.sugg{display:flex;flex-direction:column;gap:6px}
+.sugg button{font:inherit;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:11px 12px;display:flex;justify-content:space-between;gap:8px;cursor:pointer}
+.sugg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.spacer{flex:1}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:14px;z-index:50;max-width:calc(100% - 32px);text-align:center}
+.busy{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--muted)}
+.spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+/* editor scansione */
+.ed{position:fixed;inset:0;background:#0B0F0E;z-index:40;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+.ed .stage{flex:1;position:relative;overflow:hidden;touch-action:none}
+.ed canvas{position:absolute;left:0;top:0}
+.ed .bar{display:flex;flex-direction:column;gap:10px;padding:12px 16px 16px;background:#141A18;color:#E6EDEA}
+.ed .modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.ed .modes button{font:600 14px var(--f-b);border-radius:10px;border:1px solid #33403B;background:transparent;color:#E6EDEA;min-height:42px;cursor:pointer}
+.ed .modes button[aria-pressed="true"]{background:#5FC0B2;color:#0B1714;border-color:#5FC0B2}
+.ed .acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ed .acts .btn{background:#1F2825;color:#E6EDEA;border-color:#33403B}
+.ed .acts .btn.primary{background:#5FC0B2;color:#0B1714;border-color:#5FC0B2}
+.ed .hint{font-size:12.5px;color:#93A39C;text-align:center}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+<input type="file" id="fCam" accept="image/*" capture="environment" hidden>
+<input type="file" id="fPick" accept="application/pdf,image/*" multiple hidden>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>
+"use strict";
+/* ================= configurazione ================= */
+const APP_KEY = "g4aukgoayqmqadx";
+const REDIRECT = location.origin + location.pathname.replace(/index\.html$/, "");
+const INBOX = "/in arrivo";
+const TESS_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+
+const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+const STATI = ["Non pagato","Primo pagamento","Secondo pagamento","Pagato interamente","Rimandato"];
+const CARTELLE_BASE = ["Abbonamento giornali","Assicurazioni","Assura","Automobile e multe","Banca e Prestiti","Carte di Credito e pagam. a rate","Cittadinanza (Documenti Svizzeri)","Classor Fogli Scansionati","Comune di Chiasso","Contabilità","Conto Postale","Curriculum e Lettera Nuovi","Documenti AI e del Cantone Ticino","Documenti di ATTI DI MORTE","Documenti Misti","Documenti Vari","Dottori  e Farmacie","Fatture da email","Generale Ass. Vita","Interfida","Interfida + AGE","Lavoro + Contributi AVS","Lavoro ditte edili","Lettere e curriculum","Per Ufficio","ProInfirmis","SwissLife","Tassazioni","Telefoneria Cellulare e serafe"];
+/* parole chiave → cartella (il punteggio impara dalle scelte) */
+const PAROLE = {
+  "Assicurazioni":["polizza","assicurazione","assicurazioni","sinistro","premio","versicherung","mobiliare","axa","helvetia","allianz","baloise","vaudoise","zurich","responsabilità civile","economia domestica"],
+  "Assura":["assura","cassa malati","lamal","conteggio prestazioni","partecipazione ai costi","franchigia","assicurazione malattie"],
+  "Automobile e multe":["veicolo","targa","multa","contravvenzione","sezione della circolazione","collaudo","licenza di circolazione","garage","parcheggio","radar"],
+  "Banca e Prestiti":["banca","prestito","estratto conto","ubs","raiffeisen","bancastato","credit suisse","tasso d'interesse","ipoteca","credito privato"],
+  "Carte di Credito e pagam. a rate":["carta di credito","mastercard","visa","rata","rate","klarna","powerpay","cembra","paycard","acquisto a rate","fattura mensile"],
+  "Comune di Chiasso":["comune di chiasso","municipio","cancelleria comunale","città di chiasso","chiasso"],
+  "Conto Postale":["postfinance","conto postale","posta ch"],
+  "Dottori  e Farmacie":["dottor","dott.","dr.","medico","farmacia","ricetta","ospedale","clinica","studio medico","fisioterapia","dentista","laboratorio"],
+  "Tassazioni":["imposta","tassazione","notifica di tassazione","dichiarazione d'imposta","ufficio circondariale","divisione delle contribuzioni","conguaglio","imposte"],
+  "Telefoneria Cellulare e serafe":["swisscom","salt","sunrise","serafe","abbonamento mobile","fibra ottica","canone radio"],
+  "Lavoro + Contributi AVS":["avs","contributi","salario","cassa di compensazione","certificato di salario","busta paga","datore di lavoro"],
+  "Documenti AI e del Cantone Ticino":["assicurazione invalidità","ufficio ai","repubblica e cantone ticino","cantone ticino","istituto delle assicurazioni sociali"],
+  "Generale Ass. Vita":["generali","assicurazione vita","previdenza"],
+  "SwissLife":["swiss life","swisslife"],
+  "Interfida + AGE":["interfida","age sa"],
+  "ProInfirmis":["pro infirmis","proinfirmis"],
+  "Cittadinanza (Documenti Svizzeri)":["cittadinanza","naturalizzazione","passaporto","carta d'identità","permesso di dimora","stato civile"],
+  "Abbonamento giornali":["corriere del ticino","laregione","la regione","giornale","abbonamento al quotidiano","informatore"]
+};
+const TIPI_DOC = ["Polizza","Fattura","Conteggio prestazioni","Notifica di tassazione","Estratto conto","Contratto","Lettera","Certificato","Ricetta","Conferma","Disdetta","Richiamo","Decisione","Offerta"];
+
+/* ================= utilità ================= */
+const $ = s => document.querySelector(s);
+function h(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "value") e.value = v;
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k)));
+  return e;
+}
+const pad = n => String(n).padStart(2, "0");
+const oggi = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
+const meseCorr = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1); };
+const dIT = s => s ? s.split("-").reverse().join(".") : "";
+const itToIso = s => { const m = String(s || "").trim().match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/); if (!m) return ""; let y = +m[3]; if (y < 100) y += 2000; return y + "-" + pad(+m[2]) + "-" + pad(+m[1]); };
+const fmtAmt = n => (Number(n) || 0).toFixed(2);
+const parseAmt = s => { const n = parseFloat(String(s || "").replace(/['’\s]/g, "").replace(",", ".")); return isFinite(n) ? Math.round(n * 100) / 100 : NaN; };
+const uid = () => new Date().toISOString().replace(/[-:T.Z]/g, "").slice(0, 14) + "-" + Math.random().toString(36).slice(2, 7);
+function toast(msg, ms = 2800) { const t = h("div", { class: "toast", role: "status", text: msg }); $("#toast").replaceChildren(t); setTimeout(() => t.remove(), ms); }
+const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("load " + src)); document.head.append(s); }); }
+
+/* formattazione riferimento QR (27 cifre: 2 + 5×5) */
+function fmtRif(r) {
+  r = String(r || "").replace(/\s+/g, "");
+  if (/^\d{27}$/.test(r)) return r.slice(0, 2) + " " + r.slice(2).match(/.{5}/g).join(" ");
+  if (/^RF/i.test(r)) return r.toUpperCase().match(/.{1,4}/g).join(" ");
+  return r;
+}
+const fmtIban = s => String(s || "").replace(/\s+/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
+
+/* ================= QR-fattura svizzera ================= */
+function parseQRBill(text) {
+  if (!text) return null;
+  const L = text.replace(/\r/g, "").split("\n");
+  if (L[0] !== "SPC") return null;
+  const g = i => (L[i] || "").trim();
+  const nome = g(5);
+  const r = { iban: g(3), beneficiario: nome, importo: g(18) ? parseFloat(g(18)) : null, valuta: g(19), tipoRif: g(27), riferimento: g(28), messaggio: g(29) };
+  return r.iban ? r : null;
+}
+function scanQR(canvas) {
+  if (!window.jsQR) return null;
+  const tries = [];
+  const W = canvas.width, H = canvas.height;
+  const scale = Math.min(1, 1600 / Math.max(W, H));
+  tries.push([0, 0, W, H, scale]);
+  tries.push([0, H * 0.45, W, H * 0.55, Math.min(1, 1400 / W)]); /* parte di pagamento in basso */
+  tries.push([0, 0, W, H, Math.min(1, 900 / Math.max(W, H))]);
+  for (const [sx, sy, sw, sh, sc] of tries) {
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(sw * sc)); c.height = Math.max(1, Math.round(sh * sc));
+    const x = c.getContext("2d", { willReadFrequently: true });
+    x.drawImage(canvas, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    const d = x.getImageData(0, 0, c.width, c.height);
+    const q = jsQR(d.data, c.width, c.height, { inversionAttempts: "attemptBoth" });
+    if (q && q.data) { const p = parseQRBill(q.data); if (p) return p; }
+  }
+  return null;
+}
+
+/* ================= analisi del testo (OCR) ================= */
+const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+function trovaDate(t) {
+  const out = [];
+  const re = /\b(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})\b/g; let m;
+  while ((m = re.exec(t))) { const iso = itToIso(m[0]); if (iso) out.push({ iso, idx: m.index }); }
+  const mesi = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+  const re2 = new RegExp("\\b(\\d{1,2})\\.?\\s+(" + mesi.join("|") + ")\\s+(\\d{4})\\b", "gi");
+  while ((m = re2.exec(t))) out.push({ iso: m[3] + "-" + pad(mesi.indexOf(m[2].toLowerCase()) + 1) + "-" + pad(+m[1]), idx: m.index });
+  const max = oggi(), min = (new Date().getFullYear() - 30) + "-01-01";
+  return out.filter(d => d.iso <= "2100" && d.iso >= min && !isNaN(new Date(d.iso)));
+}
+function dataDocumento(t) {
+  const ds = trovaDate(t).filter(d => d.iso <= oggi());
+  if (!ds.length) return "";
+  return ds.sort((a, b) => a.idx - b.idx)[0].iso; /* di solito la prima data in alto è quella della lettera */
+}
+function scadenzaDa(t) {
+  const n = norm(t);
+  const m = n.match(/(scadenza|pagabile entro|da pagare entro|entro il|zahlbar bis|faellig|echeance|payable jusqu)[^0-9]{0,25}(\d{1,2}[.\/]\d{1,2}[.\/]\d{2,4})/);
+  return m ? itToIso(m[2]) : "";
+}
+function importoDa(t) {
+  const m = t.replace(/'/g, "").match(/(?:CHF|Fr\.)\s*([0-9]{1,6}[.,][0-9]{2})/i) || t.replace(/'/g, "").match(/([0-9]{1,6}[.,][0-9]{2})\s*(?:CHF)/i);
+  return m ? parseAmt(m[1]) : NaN;
+}
+function ibanDa(t) { const m = t.replace(/\s+/g, "").match(/CH\d{2}[0-9A-Z]{17}/i); return m ? m[0].toUpperCase() : ""; }
+function rifDa(t) { const m = t.match(/\b(\d{2}(?:\s?\d{5}){5})\b/); return m ? m[1].replace(/\s/g, "") : ""; }
+
+function proponiCartelle(testo, cartelle) {
+  const n = norm(testo);
+  const learn = ls.get("bt_learn", {});
+  const words = new Set((n.match(/[a-z]{5,}/g) || []));
+  const sc = {};
+  for (const c of cartelle) {
+    let s = 0;
+    for (const k of (PAROLE[c] || [])) if (n.includes(norm(k))) s += k.length > 8 ? 3 : 2;
+    if (n.includes(norm(c.replace(/\(.*?\)/g, "").trim()))) s += 3;
+    const L = learn[c] || {};
+    for (const w of words) if (L[w]) s += Math.min(3, L[w] * 0.6);
+    sc[c] = s;
+  }
+  const ord = cartelle.slice().sort((a, b) => sc[b] - sc[a]);
+  const top = ord.filter(c => sc[c] > 0).slice(0, 3);
+  if (top.length < 3) for (const c of ["Documenti Vari", "Documenti Misti", "Assicurazioni"]) if (!top.includes(c) && cartelle.includes(c) && top.length < 3) top.push(c);
+  return { top, sc };
+}
+function impara(testo, cartella) {
+  if (!testo) return;
+  const learn = ls.get("bt_learn", {});
+  const stop = new Set(["della","delle","degli","sono","questa","questo","nostro","vostro","grazie","saluti","signor","signora","pagina","totale","importo","data","indirizzo","telefono","email","presente","quale","nella","nelle","anche","vostra","nostra","dalla","dalle"]);
+  const words = [...new Set((norm(testo).match(/[a-z]{5,}/g) || []))].filter(w => !stop.has(w)).slice(0, 60);
+  const L = learn[cartella] || (learn[cartella] = {});
+  for (const w of words) L[w] = Math.min(20, (L[w] || 0) + 1);
+  ls.set("bt_learn", learn);
+}
+function descrizioneDa(testo, cartella) {
+  const n = norm(testo);
+  let tipo = TIPI_DOC.find(t => n.includes(norm(t))) || "";
+  let ente = "";
+  const generici = /^(polizza|rata|rate|assicurazione|assicurazioni|imposta|imposte|tassazione|banca|contributi|salario|veicolo|targa|multa|medico|farmacia|ricetta|premio|sinistro|giornale)$/i;
+  for (const k of (PAROLE[cartella] || [])) if (n.includes(norm(k)) && k.length > 3 && !generici.test(k)) { ente = k.replace(/\b\w/g, c => c.toUpperCase()); break; }
+  if (ente && tipo && norm(tipo).includes(norm(ente))) ente = "";
+  return [ente, tipo].filter(Boolean).join(" – ");
+}
+
+let tessWorker = null;
+async function ocr(canvas) {
+  if (!navigator.onLine && !window.Tesseract) return "";
+  try {
+    if (!window.Tesseract) await loadScript(TESS_URL);
+    if (!tessWorker) tessWorker = await Tesseract.createWorker("ita+deu+fra");
+    const c = document.createElement("canvas");
+    const sc = Math.min(1, 1800 / Math.max(canvas.width, canvas.height));
+    c.width = Math.round(canvas.width * sc); c.height = Math.round(canvas.height * sc);
+    c.getContext("2d").drawImage(canvas, 0, 0, c.width, c.height);
+    const r = await tessWorker.recognize(c);
+    return r.data.text || "";
+  } catch (e) { console.warn(e); return ""; }
+}
+
+/* ================= immagini: angoli, raddrizzamento, effetto scansione ================= */
+function fileToCanvas(file, maxSide = 2600) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const sc = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); res(c);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("immagine non leggibile")); };
+    img.src = url;
+  });
+}
+/* trova i 4 angoli del foglio (foglio chiaro su sfondo più scuro) */
+function trovaAngoli(src) {
+  const W = 320, sc = W / src.width, H = Math.max(1, Math.round(src.height * sc));
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(src, 0, 0, W, H);
+  const d = x.getImageData(0, 0, W, H).data;
+  const g = new Uint8Array(W * H), hist = new Array(256).fill(0);
+  for (let i = 0; i < W * H; i++) { const v = (d[i * 4] * 0.3 + d[i * 4 + 1] * 0.59 + d[i * 4 + 2] * 0.11) | 0; g[i] = v; hist[v]++; }
+  /* soglia di Otsu */
+  let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
+  let sB = 0, wB = 0, best = 0, th = 128;
+  for (let t = 0; t < 256; t++) { wB += hist[t]; if (!wB) continue; const wF = W * H - wB; if (!wF) break; sB += t * hist[t]; const mB = sB / wB, mF = (sum - sB) / wF; const v = wB * wF * (mB - mF) ** 2; if (v > best) { best = v; th = t; } }
+  let tl = null, tr = null, br = null, bl = null, a = Infinity, b = -Infinity, cc = -Infinity, dd = -Infinity, n = 0;
+  for (let y = 0; y < H; y++) for (let xx = 0; xx < W; xx++) {
+    if (g[y * W + xx] <= th) continue; n++;
+    const s = xx + y, df = xx - y;
+    if (s < a) { a = s; tl = [xx, y]; } if (s > cc) { cc = s; br = [xx, y]; }
+    if (df > b) { b = df; tr = [xx, y]; } if (-df > dd) { dd = -df; bl = [xx, y]; }
+  }
+  const full = [[0, 0], [src.width, 0], [src.width, src.height], [0, src.height]];
+  if (!tl || n < W * H * 0.12 || n > W * H * 0.97) return full;
+  const q = [tl, tr, br, bl].map(p => [p[0] / sc, p[1] / sc]);
+  const area = Math.abs((q[0][0] * q[1][1] - q[1][0] * q[0][1]) + (q[1][0] * q[2][1] - q[2][0] * q[1][1]) + (q[2][0] * q[3][1] - q[3][0] * q[2][1]) + (q[3][0] * q[0][1] - q[0][0] * q[3][1])) / 2;
+  if (area < src.width * src.height * 0.15) return full;
+  return q;
+}
+/* omografia: mappa il rettangolo di destinazione sul quadrilatero di origine */
+function omografia(dst, srcQ) {
+  const A = [], B = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = dst[i], [u, v] = srcQ[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); B.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); B.push(v);
+  }
+  for (let i = 0; i < 8; i++) {
+    let m = i; for (let r = i + 1; r < 8; r++) if (Math.abs(A[r][i]) > Math.abs(A[m][i])) m = r;
+    [A[i], A[m]] = [A[m], A[i]]; [B[i], B[m]] = [B[m], B[i]];
+    for (let r = 0; r < 8; r++) { if (r === i) continue; const f = A[r][i] / A[i][i]; for (let k = i; k < 8; k++) A[r][k] -= f * A[i][k]; B[r] -= f * B[i]; }
+  }
+  return B.map((v, i) => v / A[i][i]).concat(1);
+}
+const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+function raddrizza(src, q) {
+  let w = Math.max(dist(q[0], q[1]), dist(q[3], q[2])), hh = Math.max(dist(q[0], q[3]), dist(q[1], q[2]));
+  const sc = Math.min(1, 2200 / Math.max(w, hh)); w = Math.max(10, Math.round(w * sc)); hh = Math.max(10, Math.round(hh * sc));
+  const Hm = omografia([[0, 0], [w, 0], [w, hh], [0, hh]], q);
+  const sx = src.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, src.width, src.height), sd = sx.data, SW = src.width, SH = src.height;
+  const out = document.createElement("canvas"); out.width = w; out.height = hh;
+  const ox = out.getContext("2d"), od = ox.createImageData(w, hh), o = od.data;
+  for (let y = 0; y < hh; y++) for (let x = 0; x < w; x++) {
+    const den = Hm[6] * x + Hm[7] * y + 1;
+    const u = (Hm[0] * x + Hm[1] * y + Hm[2]) / den, v = (Hm[3] * x + Hm[4] * y + Hm[5]) / den;
+    const x0 = Math.min(SW - 2, Math.max(0, u | 0)), y0 = Math.min(SH - 2, Math.max(0, v | 0)), fx = Math.min(1, Math.max(0, u - x0)), fy = Math.min(1, Math.max(0, v - y0));
+    const i00 = (y0 * SW + x0) * 4, i10 = i00 + 4, i01 = i00 + SW * 4, i11 = i01 + 4, j = (y * w + x) * 4;
+    for (let k = 0; k < 3; k++) o[j + k] = (sd[i00 + k] * (1 - fx) + sd[i10 + k] * fx) * (1 - fy) + (sd[i01 + k] * (1 - fx) + sd[i11 + k] * fx) * fy;
+    o[j + 3] = 255;
+  }
+  ox.putImageData(od, 0, 0);
+  return out;
+}
+/* effetto scansione: corregge l'illuminazione e alza il contrasto */
+function migliora(src, modo) {
+  const W = src.width, H = src.height;
+  const out = document.createElement("canvas"); out.width = W; out.height = H;
+  const ox = out.getContext("2d", { willReadFrequently: true }); ox.drawImage(src, 0, 0);
+  if (modo === "colore") { const id = ox.getImageData(0, 0, W, H), d = id.data; for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.max(0, Math.min(255, (d[i + k] - 128) * 1.12 + 140)); ox.putImageData(id, 0, 0); return out; }
+  /* sfondo stimato: immagine piccola sfocata */
+  const bw = 64, bh = Math.max(1, Math.round(H * bw / W));
+  const sm = document.createElement("canvas"); sm.width = bw; sm.height = bh;
+  const sx = sm.getContext("2d", { willReadFrequently: true }); sx.drawImage(src, 0, 0, bw, bh);
+  const sd = sx.getImageData(0, 0, bw, bh), s = sd.data, g = new Float32Array(bw * bh);
+  for (let i = 0; i < bw * bh; i++) g[i] = Math.max(s[i * 4], s[i * 4 + 1], s[i * 4 + 2]);
+  for (let pass = 0; pass < 3; pass++) { const t = g.slice(); for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) { let m = 0, n = 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const yy = y + dy, xx = x + dx; if (yy < 0 || xx < 0 || yy >= bh || xx >= bw) continue; m = Math.max(m, t[yy * bw + xx]); n++; } g[y * bw + x] = m; } }
+  for (let i = 0; i < bw * bh; i++) { s[i * 4] = s[i * 4 + 1] = s[i * 4 + 2] = g[i]; s[i * 4 + 3] = 255; }
+  sx.putImageData(sd, 0, 0);
+  const bg = document.createElement("canvas"); bg.width = W; bg.height = H;
+  const bx = bg.getContext("2d", { willReadFrequently: true }); bx.imageSmoothingEnabled = true; bx.drawImage(sm, 0, 0, W, H);
+  const B = bx.getImageData(0, 0, W, H).data, id = ox.getImageData(0, 0, W, H), d = id.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const gr = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
+    let v = Math.min(255, gr / Math.max(40, B[i]) * 255);
+    v = v > 235 ? 255 : Math.max(0, (v - 40) * 255 / 195);
+    if (modo === "bn") v = v < 165 ? 0 : 255;
+    d[i] = d[i + 1] = d[i + 2] = v;
+  }
+  ox.putImageData(id, 0, 0);
+  return out;
+}
+
+/* ================= PDF ================= */
+async function canvasesToPdf(pages) {
+  const { jsPDF } = window.jspdf;
+  let pdf = null;
+  for (const c of pages) {
+    const wPt = 595.28, hPt = wPt * c.height / c.width;
+    const data = c.toDataURL("image/jpeg", 0.72);
+    if (!pdf) pdf = new jsPDF({ unit: "pt", format: [wPt, hPt], orientation: hPt >= wPt ? "p" : "l", compress: true });
+    else pdf.addPage([wPt, hPt], hPt >= wPt ? "p" : "l");
+    pdf.addImage(data, "JPEG", 0, 0, wPt, hPt, undefined, "FAST");
+  }
+  return pdf.output("blob");
+}
+async function pdfInfo(file) {
+  /* testo + QR della prima pagina di un PDF scelto */
+  const out = { text: "", qr: null, thumb: null };
+  if (!window.pdfjsLib) return out;
+  try {
+    const doc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    for (let p = 1; p <= Math.min(doc.numPages, 3); p++) {
+      const pg = await doc.getPage(p);
+      const tc = await pg.getTextContent(); out.text += tc.items.map(i => i.str).join(" ") + "\n";
+      if (p === 1 || !out.qr) {
+        const vp = pg.getViewport({ scale: 2.2 });
+        const c = document.createElement("canvas"); c.width = vp.width; c.height = vp.height;
+        await pg.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
+        if (p === 1) { const t = document.createElement("canvas"); t.width = 124; t.height = Math.round(124 * c.height / c.width); t.getContext("2d").drawImage(c, 0, 0, t.width, t.height); out.thumb = t.toDataURL("image/jpeg", 0.7); out.canvas = c; }
+        if (!out.qr) out.qr = scanQR(c);
+      }
+    }
+    out.pages = doc.numPages;
+  } catch (e) { console.warn(e); }
+  return out;
+}
+
+/* ================= coda (IndexedDB) ================= */
+const DB = { db: null,
+  open() { if (this.db) return Promise.resolve(this.db); return new Promise((res, rej) => { const r = indexedDB.open("bilancio-tascabile", 1); r.onupgradeneeded = () => { r.result.createObjectStore("items", { keyPath: "id" }); }; r.onsuccess = () => { this.db = r.result; res(this.db); }; r.onerror = () => rej(r.error); }); },
+  async tx(mode, fn) { const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction("items", mode); const st = t.objectStore("items"); const out = fn(st); t.oncomplete = () => res(out && out.result !== undefined ? out.result : out); t.onerror = () => rej(t.error); }); },
+  put(it) { return this.tx("readwrite", s => s.put(it)); },
+  del(id) { return this.tx("readwrite", s => s.delete(id)); },
+  async all() { const db = await this.open(); return new Promise((res, rej) => { const r = db.transaction("items").objectStore("items").getAll(); r.onsuccess = () => res(r.result || []); r.onerror = () => rej(r.error); }); }
+};
+
+/* ================= Dropbox (OAuth PKCE) ================= */
+const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const apiArg = o => JSON.stringify(o).replace(/[\u007f-￿]/g, c => "\\u" + ("000" + c.charCodeAt(0).toString(16)).slice(-4));
+const Dbx = {
+  get connected() { return !!ls.get("bt_rt", null); },
+  async authUrl(withRedirect) {
+    const v = b64url(crypto.getRandomValues(new Uint8Array(48)));
+    ls.set("bt_pkce", v);
+    const ch = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v)));
+    const p = { client_id: APP_KEY, response_type: "code", code_challenge: ch, code_challenge_method: "S256", token_access_type: "offline" };
+    if (withRedirect) p.redirect_uri = REDIRECT;
+    return "https://www.dropbox.com/oauth2/authorize?" + new URLSearchParams(p);
+  },
+  async exchange(code, withRedirect) {
+    const p = { code, grant_type: "authorization_code", code_verifier: ls.get("bt_pkce", ""), client_id: APP_KEY };
+    if (withRedirect) p.redirect_uri = REDIRECT;
+    const r = await fetch("https://api.dropboxapi.com/oauth2/token", { method: "POST", body: new URLSearchParams(p) });
+    const j = await r.json();
+    if (!r.ok || !j.refresh_token) throw new Error(j.error_description || j.error || "collegamento non riuscito");
+    ls.set("bt_rt", j.refresh_token); ls.set("bt_at", { t: j.access_token, exp: Date.now() + (j.expires_in - 120) * 1000 });
+  },
+  async token() {
+    const a = ls.get("bt_at", null); if (a && a.exp > Date.now()) return a.t;
+    const rt = ls.get("bt_rt", null); if (!rt) throw new Error("non collegato");
+    const r = await fetch("https://api.dropboxapi.com/oauth2/token", { method: "POST", body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: rt, client_id: APP_KEY }) });
+    const j = await r.json();
+    if (!r.ok) { if (j.error === "invalid_grant") { localStorage.removeItem("bt_rt"); } throw new Error(j.error_description || "accesso Dropbox scaduto"); }
+    ls.set("bt_at", { t: j.access_token, exp: Date.now() + (j.expires_in - 120) * 1000 }); return j.access_token;
+  },
+  async upload(path, blob) {
+    const t = await this.token();
+    const r = await fetch("https://content.dropboxapi.com/2/files/upload", { method: "POST", headers: { Authorization: "Bearer " + t, "Content-Type": "application/octet-stream", "Dropbox-API-Arg": apiArg({ path, mode: "overwrite", mute: true }) }, body: blob });
+    if (!r.ok) throw new Error("caricamento non riuscito (" + r.status + ")");
+    return r.json();
+  },
+  async rpc(ep, body) {
+    const t = await this.token();
+    const r = await fetch("https://api.dropboxapi.com/2/" + ep, { method: "POST", headers: { Authorization: "Bearer " + t, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(j.error_summary || "errore Dropbox"); e.summary = j.error_summary || ""; throw e; }
+    return j;
+  },
+  async download(path) {
+    const t = await this.token();
+    const r = await fetch("https://content.dropboxapi.com/2/files/download", { method: "POST", headers: { Authorization: "Bearer " + t, "Dropbox-API-Arg": apiArg({ path }) } });
+    if (!r.ok) return null; return r.text();
+  },
+  async inboxIds() {
+    try { let j = await this.rpc("files/list_folder", { path: INBOX }); let e = j.entries; while (j.has_more) { j = await this.rpc("files/list_folder/continue", { cursor: j.cursor }); e = e.concat(j.entries); } return new Set(e.map(x => x.name.replace(/\.(pdf|json)$/i, ""))); }
+    catch (e) { if (/not_found/.test(e.summary || "")) return new Set(); throw e; }
+  }
+};
+
+/* ================= invio ================= */
+let sending = false;
+async function invia() {
+  if (sending || !navigator.onLine || !Dbx.connected) return;
+  sending = true;
+  try {
+    const items = (await DB.all()).filter(i => i.stato === "coda" || i.stato === "errore");
+    for (const it of items) {
+      try {
+        await Dbx.upload(INBOX + "/" + it.id + ".pdf", it.pdf);
+        await Dbx.upload(INBOX + "/" + it.id + ".json", new Blob([JSON.stringify(it.meta, null, 2)], { type: "application/json" }));
+        it.stato = "inviato"; it.inviatoIl = new Date().toISOString(); delete it.err;
+        it.pdf = null; /* il PDF non serve più sul telefono */
+        await DB.put(it);
+      } catch (e) { it.stato = "errore"; it.err = String(e.message || e); await DB.put(it); }
+    }
+    /* chi non è più in "in arrivo" è stato archiviato dal PC */
+    const sent = (await DB.all()).filter(i => i.stato === "inviato");
+    if (sent.length) { const ids = await Dbx.inboxIds(); for (const it of sent) if (!ids.has(it.id)) { it.stato = "archiviato"; await DB.put(it); } }
+    /* elenco cartelle aggiornato dal PC */
+    const cj = await Dbx.download("/config/cartelle.json").catch(() => null);
+    if (cj) { try { const a = JSON.parse(cj); if (Array.isArray(a.cartelle) && a.cartelle.length) ls.set("bt_cartelle", a.cartelle); } catch {} }
+    /* tieni solo gli ultimi 60 */
+    const all = (await DB.all()).sort((a, b) => b.creato.localeCompare(a.creato));
+    for (const it of all.slice(60)) if (it.stato === "archiviato") await DB.del(it.id);
+  } catch (e) { console.warn(e); }
+  finally { sending = false; if (S.view === "home" || S.view === "coda") render(); }
+}
+window.addEventListener("online", () => invia());
+document.addEventListener("visibilitychange", () => { if (!document.hidden) invia(); });
+
+/* ================= stato e viste ================= */
+const S = { view: "home", form: null, items: [] };
+const cartelle = () => ls.get("bt_cartelle", CARTELLE_BASE);
+function mesiScelta() { const d = new Date(), out = []; for (let k = -3; k <= 3; k++) { const x = new Date(d.getFullYear(), d.getMonth() + k, 1); out.push({ v: x.getFullYear() + "-" + pad(x.getMonth() + 1), t: MESI[x.getMonth()] + " " + x.getFullYear() }); } return out; }
+function go(v, form) { S.view = v; if (form !== undefined) S.form = form; render(); window.scrollTo(0, 0); }
+
+async function render() {
+  S.items = (await DB.all().catch(() => [])).sort((a, b) => b.creato.localeCompare(a.creato));
+  const app = $("#app");
+  const v = S.view === "cedola" ? vCedola() : S.view === "documento" ? vDocumento() : S.view === "coda" ? vCoda() : S.view === "impostazioni" ? vImpostazioni() : vHome();
+  app.replaceChildren(v);
+}
+
+function badge() {
+  return Dbx.connected
+    ? h("span", { class: "pill ok" }, h("span", { class: "d" }), navigator.onLine ? "Dropbox collegato" : "Senza rete")
+    : h("button", { class: "pill no", style: "border:0;cursor:pointer", onclick: () => go("impostazioni") }, h("span", { class: "d" }), "Collega Dropbox");
+}
+const ICON_CED = () => { const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("width", "28"); s.setAttribute("height", "28"); s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("fill", "none"); s.setAttribute("stroke", "currentColor"); s.setAttribute("stroke-width", "1.8"); s.setAttribute("stroke-linecap", "round"); s.innerHTML = '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 13h4"/><rect x="14" y="11" width="4" height="4"/>'; return s; };
+const ICON_DOC = () => { const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("width", "28"); s.setAttribute("height", "28"); s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("fill", "none"); s.setAttribute("stroke", "currentColor"); s.setAttribute("stroke-width", "1.8"); s.setAttribute("stroke-linecap", "round"); s.innerHTML = '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>'; return s; };
+
+function statoPill(it) {
+  if (it.stato === "coda") return h("span", { class: "st q", text: "In coda" });
+  if (it.stato === "errore") return h("span", { class: "st e", text: "Da ritentare" });
+  if (it.stato === "inviato") return h("span", { class: "st s", text: "Inviata" });
+  return h("span", { class: "st a", text: "Archiviata" });
+}
+function itemRow(it) {
+  const m = it.meta;
+  const tit = m.tipo === "cedola" ? m.beneficiario : m.descrizione || m.cartella;
+  const sub = m.tipo === "cedola" ? "Cedola · " + fmtAmt(m.importo) + " CHF · " + m.stato_cartella : "Documento · " + m.cartella;
+  return h("div", { class: "row" }, h("div", { class: "l" }, h("b", { text: tit }), h("span", { class: "small muted", text: sub })), statoPill(it));
+}
+
+function vHome() {
+  const coda = S.items.filter(i => i.stato === "coda" || i.stato === "errore").length;
+  const mese = S.items.filter(i => i.creato.slice(0, 7) === meseCorr() && i.stato !== "coda").length;
+  return h("div", { class: "wrap" },
+    h("div", { class: "top" }, h("h1", {}, "Bilancio ", h("span", { text: "Tascabile" })), badge()),
+    h("div", { class: "muted", text: "Cosa vuoi archiviare?" }),
+    h("button", { class: "big primary", onclick: () => go("cedola", nuovaCedola()) }, h("span", { class: "t" }, ICON_CED(), "Cedola di pagamento"), h("span", { class: "s", text: "Foto o PDF: il codice QR compila i dati. Scegli mese e cartella." })),
+    h("button", { class: "big", onclick: () => go("documento", nuovoDoc()) }, h("span", { class: "t", style: "color:var(--accent)" }, ICON_DOC(), h("span", { style: "color:var(--ink)", text: "Documento da archiviare" })), h("span", { class: "s muted", text: "Lettere, contratti, polizze. Leggo il foglio e ti propongo la cartella." })),
+    S.items.length ? h("div", { class: "label", text: "Ultimi inserimenti" }) : null,
+    S.items.length ? h("div", { class: "list" }, S.items.slice(0, 4).map(itemRow)) : h("div", { class: "notice i" }, h("b", { text: "Ancora nessun inserimento" }), "Fotografa la prima cedola o il primo documento: arriverà nel tuo archivio sul PC."),
+    h("div", { class: "spacer" }),
+    h("button", { class: "btn", style: "justify-content:space-between", onclick: () => go("coda") }, h("span", { text: (coda ? coda + " in coda · " : "") + mese + " inviati questo mese" }), h("span", { style: "color:var(--accent)", text: "Vedi ›" })),
+    h("button", { class: "btn link small", onclick: () => go("impostazioni"), text: "Impostazioni" })
+  );
+}
+
+/* ---------- pagine (foto/PDF) ---------- */
+function nuovaCedola() { return { tipo: "cedola", pagine: [], pdfFile: null, testo: "", beneficiario: "", importo: "", scadenza: "", riferimento: "", iban: "", mese: meseCorr(), stato_cartella: "Non pagato", qr: false, analisi: false }; }
+function nuovoDoc() { return { tipo: "documento", pagine: [], pdfFile: null, testo: "", cartella: "", proposte: [], descrizione: "", data: oggi(), analisi: false }; }
+
+function pagesBox(f) {
+  const kids = [];
+  if (f.pdfFile) kids.push(h("div", { class: "pg" }, f.pdfThumb ? h("img", { src: f.pdfThumb, alt: "Anteprima PDF" }) : h("div", { style: "width:62px;height:80px;border-radius:6px;background:var(--sunk);display:grid;place-items:center;font-size:11px", text: "PDF" }), h("button", { class: "x", "aria-label": "Rimuovi PDF", onclick: () => { f.pdfFile = null; f.pdfThumb = null; f.testo = ""; f.analisi = false; render(); } }, "×")));
+  f.pagine.forEach((p, i) => kids.push(h("div", { class: "pg" }, h("img", { src: p.thumb, alt: "Pagina " + (i + 1) }), h("button", { class: "x", "aria-label": "Rimuovi pagina " + (i + 1), onclick: () => { f.pagine.splice(i, 1); render(); } }, "×"))));
+  const n = f.pagine.length;
+  const info = f.pdfFile ? [h("b", { text: f.pdfFile.name }), h("span", { class: "muted", text: "PDF inviato così com'è" })]
+    : n ? [h("b", { text: n + (n === 1 ? " pagina" : " pagine") + " · effetto scansione" }), h("span", { class: "muted", text: "Diventano un unico PDF, mai salvate come foto" })]
+    : [h("b", { text: "Nessuna pagina" }), h("span", { class: "muted", text: "Scatta una foto o scegli un PDF" })];
+  kids.push(h("div", { class: "info" }, info));
+  return h("div", { class: "pages" }, kids);
+}
+function captureBtns(f) {
+  return h("div", { class: "grid2" },
+    h("button", { class: "btn primary", disabled: !!f.pdfFile, onclick: () => pick("#fCam") }, f.pagine.length ? "+ Altra pagina" : "Scatta foto"),
+    h("button", { class: "btn", disabled: f.pagine.length > 0, onclick: () => pick("#fPick") }, "Scegli PDF"));
+}
+function pick(sel) { const i = $(sel); i.value = ""; i.click(); }
+async function onFiles(files) {
+  const f = S.form; if (!f) return;
+  for (const file of files) {
+    if (/pdf$/i.test(file.type) || /\.pdf$/i.test(file.name)) {
+      if (f.pagine.length) { toast("Hai già delle foto: un PDF va inserito da solo."); continue; }
+      f.pdfFile = file; f.analisi = "corso"; render();
+      const info = await pdfInfo(file);
+      f.pdfThumb = info.thumb; f.testo = info.text;
+      await analizza(f, info.qr, info.canvas);
+      f.analisi = true; render();
+      return;
+    }
+    try { const c = await fileToCanvas(file); await editor(c); } catch (e) { toast("Foto non leggibile, riprova."); }
+  }
+}
+$("#fCam").addEventListener("change", e => onFiles([...e.target.files]));
+$("#fPick").addEventListener("change", e => onFiles([...e.target.files]));
+
+/* ---------- editor: angoli + modo ---------- */
+function editor(src) {
+  return new Promise(resolve => {
+    const f = S.form;
+    let q = trovaAngoli(src), modo = ls.get("bt_modo", "grigio"), drag = -1;
+    const stage = h("div", { class: "stage" }), cv = h("canvas"); stage.append(cv);
+    const modes = h("div", { class: "modes" }, [["grigio", "Grigio"], ["bn", "Bianco e nero"], ["colore", "Colore"]].map(([k, t]) => h("button", { "aria-pressed": String(k === modo), onclick: e => { modo = k; ls.set("bt_modo", k); modes.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === e.currentTarget)); } }, t)));
+    const ed = h("div", { class: "ed", role: "dialog", "aria-label": "Ritaglia la pagina" }, stage,
+      h("div", { class: "bar" },
+        h("div", { class: "hint", text: "Trascina i 4 angoli sui bordi del foglio" }), modes,
+        h("div", { class: "acts" },
+          h("button", { class: "btn", onclick: () => { ed.remove(); resolve(); } }, "Rifai foto"),
+          h("button", { class: "btn primary", onclick: conferma }, "Usa pagina"))));
+    document.body.append(ed);
+    let sc = 1, ox = 0, oy = 0;
+    function layout() {
+      const W = stage.clientWidth, H = stage.clientHeight;
+      sc = Math.min(W / src.width, H / src.height) * 0.94; cv.width = W * devicePixelRatio; cv.height = H * devicePixelRatio; cv.style.width = W + "px"; cv.style.height = H + "px";
+      ox = (W - src.width * sc) / 2; oy = (H - src.height * sc) / 2; draw();
+    }
+    function draw() {
+      const x = cv.getContext("2d"), r = devicePixelRatio; x.setTransform(r, 0, 0, r, 0, 0);
+      x.clearRect(0, 0, cv.width, cv.height); x.drawImage(src, ox, oy, src.width * sc, src.height * sc);
+      const P = q.map(p => [ox + p[0] * sc, oy + p[1] * sc]);
+      x.fillStyle = "rgba(0,0,0,.45)"; x.beginPath(); x.rect(0, 0, cv.width, cv.height); x.moveTo(P[0][0], P[0][1]); for (let i = 3; i >= 0; i--) x.lineTo(P[i][0], P[i][1]); x.closePath(); x.fill("evenodd");
+      x.strokeStyle = "#5FC0B2"; x.lineWidth = 2; x.beginPath(); P.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath(); x.stroke();
+      for (const p of P) { x.beginPath(); x.arc(p[0], p[1], 14, 0, Math.PI * 2); x.fillStyle = "rgba(95,192,178,.35)"; x.fill(); x.lineWidth = 3; x.stroke(); }
+    }
+    const toImg = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left - ox) / sc, (e.clientY - r.top - oy) / sc]; };
+    cv.addEventListener("pointerdown", e => { const p = toImg(e); let best = 1e9; q.forEach((c, i) => { const d = dist(c, p) * sc; if (d < best) { best = d; drag = i; } }); if (best > 50) drag = -1; else cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener("pointermove", e => { if (drag < 0) return; const p = toImg(e); q[drag] = [Math.max(0, Math.min(src.width, p[0])), Math.max(0, Math.min(src.height, p[1]))]; draw(); });
+    cv.addEventListener("pointerup", () => drag = -1);
+    window.addEventListener("resize", layout, { once: false });
+    requestAnimationFrame(layout);
+    async function conferma() {
+      const btn = ed.querySelector(".btn.primary"); btn.disabled = true; btn.textContent = "Elaboro…";
+      await new Promise(r => setTimeout(r, 30));
+      const dritto = raddrizza(src, q);
+      const fin = migliora(dritto, modo);
+      const t = document.createElement("canvas"); t.width = 124; t.height = Math.round(124 * fin.height / fin.width); t.getContext("2d").drawImage(fin, 0, 0, t.width, t.height);
+      f.pagine.push({ canvas: fin, thumb: t.toDataURL("image/jpeg", 0.7) });
+      ed.remove(); window.removeEventListener("resize", layout);
+      if (f.pagine.length === 1) {
+        f.analisi = "corso"; render();
+        const qr = scanQR(src) || scanQR(dritto);
+        if (!qr || f.tipo === "documento") f.testo = await ocr(fin);
+        await analizza(f, qr, dritto);
+        f.analisi = true;
+      }
+      render(); resolve();
+    }
+  });
+}
+
+async function analizza(f, qr, canvas) {
+  const t = f.testo || "";
+  if (f.tipo === "cedola") {
+    if (qr) {
+      f.qr = true;
+      f.beneficiario = f.beneficiario || qr.beneficiario;
+      if (qr.importo != null && !isNaN(qr.importo)) f.importo = fmtAmt(qr.importo);
+      f.riferimento = fmtRif(qr.riferimento); f.iban = fmtIban(qr.iban);
+    } else {
+      if (!t && canvas) f.testo = await ocr(canvas);
+      const tt = f.testo || "";
+      const a = importoDa(tt); if (!isNaN(a)) f.importo = fmtAmt(a);
+      f.iban = fmtIban(ibanDa(tt)); f.riferimento = fmtRif(rifDa(tt));
+    }
+    const sc = scadenzaDa(f.testo || ""); if (sc && !f.scadenza) f.scadenza = sc;
+  } else {
+    const { top } = proponiCartelle(t, cartelle());
+    f.proposte = top; f.cartella = top[0] || "";
+    f.descrizione = f.descrizione || descrizioneDa(t, f.cartella);
+    const d = dataDocumento(t); if (d) f.data = d;
+  }
+}
+
+function busyLine(f) { return f.analisi === "corso" ? h("div", { class: "busy" }, h("span", { class: "spin" }), f.tipo === "cedola" ? "Leggo la cedola…" : "Leggo il foglio…") : null; }
+
+/* ---------- vista cedola ---------- */
+function nomeCedola(f) {
+  const rif = (f.riferimento || "").trim();
+  return "NN Ced. " + (f.beneficiario || "…") + (rif ? " (N. " + rif + ")" : "") + " (CHF. " + (isNaN(parseAmt(f.importo)) ? "…" : fmtAmt(parseAmt(f.importo))) + ").pdf";
+}
+function vCedola() {
+  const f = S.form;
+  const inp = (id, key, extra = {}) => h("input", Object.assign({ id, value: f[key] || "", oninput: e => { f[key] = e.target.value; upd(); } }, extra));
+  const mesi = h("select", { id: "mese", class: "acc", onchange: e => { f.mese = e.target.value; upd(); } }, mesiScelta().map(m => h("option", { value: m.v, text: m.t })));
+  mesi.value = f.mese;
+  const stato = h("select", { id: "stato", class: "acc", onchange: e => { f.stato_cartella = e.target.value; upd(); } }, STATI.map(s => h("option", { value: s, text: s })));
+  stato.value = f.stato_cartella;
+  const pth = h("span", { class: "p" });
+  function upd() { const [y, m] = f.mese.split("-"); pth.textContent = "Cedole/" + y + "/" + m + " " + MESI[+m - 1] + "/" + f.stato_cartella + "/\n" + nomeCedola(f); pth.style.whiteSpace = "pre-line"; }
+  upd();
+  const qrNote = f.qr ? h("div", { class: "notice i" }, h("b", { text: "Codice QR letto · dati compilati" }), "Controlla beneficiario, importo e riferimento, poi salva.") : (f.analisi === true && (f.pagine.length || f.pdfFile) ? h("div", { class: "notice w" }, "Codice QR non trovato: ho letto quello che potevo, completa tu i campi.") : null);
+  const scad = h("input", { id: "sca", type: "date", value: f.scadenza || "", oninput: e => f.scadenza = e.target.value });
+  return h("div", { class: "wrap" },
+    h("div", { class: "hdr" }, h("button", { class: "back", "aria-label": "Indietro", onclick: () => go("home") }, "‹"), h("h2", { text: "Nuova cedola" })),
+    captureBtns(f), pagesBox(f), busyLine(f), qrNote,
+    h("div", { class: "field" }, h("label", { for: "ben", text: "Beneficiario" }), inp("ben", "beneficiario", { placeholder: "es. Swisscom, Cassa malati", autocomplete: "off" })),
+    h("div", { class: "grid2" },
+      h("div", { class: "field" }, h("label", { for: "imp", text: "Importo CHF" }), inp("imp", "importo", { class: "amt", inputmode: "decimal", placeholder: "0.00" })),
+      h("div", { class: "field" }, h("label", { for: "sca", text: "Scadenza" }), scad)),
+    h("div", { class: "grid2" },
+      h("div", { class: "field" }, h("label", { for: "mese", text: "Mese" }), mesi),
+      h("div", { class: "field" }, h("label", { for: "stato", text: "Cartella" }), stato)),
+    h("div", { class: "small muted", text: "La scadenza non cambia la cartella: decidi tu mese e cartella." }),
+    h("div", { class: "field" }, h("label", { for: "rif", text: "Riferimento" }), inp("rif", "riferimento", { class: "mono", placeholder: "dal codice QR, facoltativo" })),
+    f.iban ? h("div", { class: "small muted" }, "IBAN: ", h("span", { style: "font-family:var(--f-m)", text: f.iban })) : null,
+    h("div", { class: "box" }, h("span", { class: "label", style: "color:var(--accent)", text: "Verrà salvata come" }), pth),
+    h("div", { class: "spacer" }),
+    h("button", { class: "btn primary big2", disabled: f.analisi === "corso", onclick: salvaCedola }, "Salva e invia"));
+}
+async function salvaCedola(e) {
+  const f = S.form;
+  if (!f.pagine.length && !f.pdfFile) return toast("Aggiungi una foto o un PDF della cedola.");
+  const imp = parseAmt(f.importo);
+  if (!f.beneficiario.trim()) return toast("Inserisci il beneficiario."), $("#ben").focus();
+  if (!(imp > 0)) return toast("Inserisci un importo valido."), $("#imp").focus();
+  const meta = { versione: 1, tipo: "cedola", beneficiario: f.beneficiario.trim(), importo: imp, scadenza: f.scadenza || "", riferimento: (f.riferimento || "").trim(), iban: (f.iban || "").replace(/\s/g, ""), mese: f.mese, stato_cartella: f.stato_cartella, da_qr: !!f.qr, creato: new Date().toISOString(), dispositivo: navigator.userAgent.slice(0, 80) };
+  await salva(e.currentTarget, f, meta);
+}
+
+/* ---------- vista documento ---------- */
+function vDocumento() {
+  const f = S.form;
+  const all = cartelle();
+  const altra = h("select", { id: "altra", "aria-label": "Altra cartella", onchange: e => { if (e.target.value) { f.cartella = e.target.value; if (!f.proposte.includes(f.cartella)) f.proposte = [f.cartella].concat(f.proposte).slice(0, 3); render(); } } }, h("option", { value: "", text: "Altra cartella…" }), all.map(c => h("option", { value: c, text: c })));
+  const prop = f.proposte.length ? f.proposte : [];
+  const sugg = h("div", { class: "card" },
+    h("span", { class: "label", style: "color:var(--accent)", text: f.testo ? "Ho letto il foglio · dove lo salvo?" : "Dove lo salvo?" }),
+    prop.length ? h("div", { class: "sugg" }, prop.map((c, i) => h("button", { "aria-pressed": String(c === f.cartella), onclick: () => { f.cartella = c; render(); } }, h("span", { text: c }), i === 0 && f.testo ? h("span", { class: "small", style: "opacity:.85", text: "consigliata" }) : null))) : null,
+    altra);
+  const pth = h("span", { class: "p" });
+  const upd = () => pth.textContent = (f.cartella || "…") + "/" + (f.data || oggi()) + " " + (f.descrizione || "Documento") + ".pdf";
+  upd();
+  return h("div", { class: "wrap" },
+    h("div", { class: "hdr" }, h("button", { class: "back", "aria-label": "Indietro", onclick: () => go("home") }, "‹"), h("h2", { text: "Nuovo documento" })),
+    captureBtns(f), pagesBox(f), busyLine(f), sugg,
+    h("div", { class: "grid2", style: "grid-template-columns:minmax(0,2fr) minmax(0,1fr)" },
+      h("div", { class: "field" }, h("label", { for: "tit", text: f.testo ? "Descrizione (proposta)" : "Descrizione" }), h("input", { id: "tit", value: f.descrizione, placeholder: "es. Polizza auto 2027", oninput: e => { f.descrizione = e.target.value; upd(); } })),
+      h("div", { class: "field" }, h("label", { for: "dat", text: "Data" }), h("input", { id: "dat", type: "date", value: f.data, oninput: e => { f.data = e.target.value; upd(); } }))),
+    h("div", { class: "box" }, h("span", { class: "label", style: "color:var(--accent)", text: "Verrà salvato come" }), pth),
+    h("div", { class: "spacer" }),
+    h("button", { class: "btn primary big2", disabled: f.analisi === "corso", onclick: salvaDoc }, "Salva e invia"));
+}
+async function salvaDoc(e) {
+  const f = S.form;
+  if (!f.pagine.length && !f.pdfFile) return toast("Aggiungi una foto o un PDF del documento.");
+  if (!f.cartella) return toast("Scegli la cartella dell'archivio.");
+  if (!f.descrizione.trim()) return toast("Scrivi una breve descrizione."), $("#tit").focus();
+  impara(f.testo, f.cartella);
+  const meta = { versione: 1, tipo: "documento", cartella: f.cartella, descrizione: f.descrizione.trim(), data: f.data || oggi(), creato: new Date().toISOString(), dispositivo: navigator.userAgent.slice(0, 80) };
+  await salva(e.currentTarget, f, meta);
+}
+
+async function salva(btn, f, meta) {
+  btn.disabled = true; btn.textContent = "Preparo il PDF…";
+  try {
+    const pdf = f.pdfFile ? f.pdfFile : await canvasesToPdf(f.pagine.map(p => p.canvas));
+    const it = { id: uid(), creato: meta.creato, stato: "coda", meta, pdf };
+    await DB.put(it);
+    toast(navigator.onLine && Dbx.connected ? "Salvato, lo invio ora" : "Salvato sul telefono: parte appena c'è rete");
+    S.form = null; go("home"); invia();
+  } catch (e) { console.error(e); btn.disabled = false; btn.textContent = "Salva e invia"; toast("Non sono riuscito a creare il PDF: " + (e.message || e)); }
+}
+
+/* ---------- coda ---------- */
+function vCoda() {
+  const coda = S.items.filter(i => i.stato === "coda" || i.stato === "errore"), altri = S.items.filter(i => !(i.stato === "coda" || i.stato === "errore"));
+  return h("div", { class: "wrap" },
+    h("div", { class: "hdr" }, h("button", { class: "back", "aria-label": "Indietro", onclick: () => go("home") }, "‹"), h("h2", { text: "In coda e inviati" })),
+    coda.length ? h("div", { class: "notice w" }, h("b", { text: coda.length + (coda.length === 1 ? " elemento in attesa" : " elementi in attesa") }), !Dbx.connected ? "Collega Dropbox nelle impostazioni per inviarli." : !navigator.onLine ? "Restano salvati sul telefono e partono appena c'è rete." : (coda.find(i => i.err) ? "Ultimo errore: " + coda.find(i => i.err).err : "Invio in corso…"), h("button", { class: "btn", style: "align-self:flex-start;min-height:40px", onclick: () => { invia(); toast("Riprovo l'invio"); } }, "Riprova ora")) : null,
+    coda.length ? h("div", { class: "label", text: "In coda" }) : null,
+    coda.length ? h("div", { class: "list" }, coda.map(itemRow)) : null,
+    h("div", { class: "label", text: "Inviati" }),
+    altri.length ? h("div", { class: "list" }, altri.map(itemRow)) : h("div", { class: "small muted", text: "Ancora niente inviato." }),
+    h("div", { class: "small muted", style: "line-height:1.5" }, h("b", { text: "Inviata" }), ": è su Dropbox, in attesa del PC. ", h("b", { text: "Archiviata" }), ": il PC l'ha messa nel tuo archivio."));
+}
+
+/* ---------- impostazioni ---------- */
+function vImpostazioni() {
+  const codeIn = h("input", { id: "code", class: "mono", placeholder: "Incolla qui il codice", autocomplete: "off" });
+  return h("div", { class: "wrap" },
+    h("div", { class: "hdr" }, h("button", { class: "back", "aria-label": "Indietro", onclick: () => go("home") }, "‹"), h("h2", { text: "Impostazioni" })),
+    h("div", { class: "card" },
+      h("b", { text: "Dropbox" }),
+      Dbx.connected
+        ? [h("div", { class: "small muted", text: "Collegato. Questo dispositivo può inviare a Dropbox." }), h("button", { class: "btn", onclick: () => { ["bt_rt", "bt_at"].forEach(k => localStorage.removeItem(k)); render(); toast("Scollegato da questo dispositivo"); } }, "Scollega questo dispositivo")]
+        : [h("div", { class: "small muted", text: "Collega una volta sola: poi l'app resta collegata." }),
+           h("button", { class: "btn primary", onclick: async () => location.href = await Dbx.authUrl(true) }, "Collega Dropbox"),
+           h("details", {}, h("summary", { class: "small", style: "cursor:pointer;color:var(--accent)", text: "Non torna nell'app dopo il collegamento?" }),
+             h("div", { style: "display:flex;flex-direction:column;gap:8px;margin-top:8px" },
+               h("div", { class: "small muted", text: "1. Apri il collegamento manuale. 2. Consenti l'accesso. 3. Copia il codice che Dropbox mostra e incollalo qui." }),
+               h("button", { class: "btn", onclick: async () => { window.open(await Dbx.authUrl(false), "_blank"); } }, "Apri collegamento manuale"),
+               codeIn,
+               h("button", { class: "btn primary", onclick: async () => { try { await Dbx.exchange(codeIn.value.trim(), false); toast("Dropbox collegato"); go("home"); invia(); } catch (e) { toast("Codice non valido: " + e.message); } } }, "Conferma codice")))]),
+    h("div", { class: "card" },
+      h("b", { text: "Cartelle dell'archivio" }),
+      h("div", { class: "small muted", text: cartelle().length + " cartelle. L'elenco si aggiorna da solo quando il PC archivia." })),
+    h("div", { class: "card" },
+      h("b", { text: "Installare l'app" }),
+      h("div", { class: "small muted", text: "iPad e iPhone: in Safari tocca Condividi › Aggiungi alla schermata Home. Android: menu ⋮ di Chrome › Installa app. Surface: icona Installa nella barra di Edge." })),
+    h("div", { class: "small muted", text: "Bilancio Tascabile · versione 1.0" }));
+}
+
+/* ================= avvio ================= */
+(async function start() {
+  const qs = new URLSearchParams(location.search);
+  if (qs.get("code")) {
+    try { await Dbx.exchange(qs.get("code"), true); toast("Dropbox collegato"); }
+    catch (e) { toast("Collegamento non riuscito: " + e.message, 5000); }
+    history.replaceState(null, "", REDIRECT);
+  } else if (qs.get("error")) { toast("Collegamento annullato"); history.replaceState(null, "", REDIRECT); }
+  await render();
+  invia();
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+})();
+</script>
+</body>
+</html>
