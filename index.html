@@ -185,7 +185,7 @@ function parseQRBill(text) {
   if (L[0] !== "SPC") return null;
   const g = i => (L[i] || "").trim();
   const nome = g(5);
-  const r = { iban: g(3), beneficiario: nome, importo: g(18) ? parseFloat(g(18)) : null, valuta: g(19), tipoRif: g(27), riferimento: g(28), messaggio: g(29) };
+  const r = { raw: text, iban: g(3), beneficiario: nome, importo: g(18) ? parseFloat(g(18)) : null, valuta: g(19), tipoRif: g(27), riferimento: g(28), messaggio: g(29) };
   return r.iban ? r : null;
 }
 function scanQR(canvas) {
@@ -511,6 +511,8 @@ async function invia() {
     const sent = (await DB.all()).filter(i => i.stato === "inviato");
     if (sent.length) { const ids = await Dbx.inboxIds(); for (const it of sent) if (!ids.has(it.id)) { it.stato = "archiviato"; await DB.put(it); } }
     /* elenco cartelle aggiornato dal PC */
+    const pj = await Dbx.download("/config/pagamenti.json").catch(() => null);
+    if (pj) { try { const a = JSON.parse(pj); if (a && a.mesi) ls.set("bt_pagamenti", a); } catch {} }
     const cj = await Dbx.download("/config/cartelle.json").catch(() => null);
     if (cj) { try { const a = JSON.parse(cj); if (Array.isArray(a.cartelle) && a.cartelle.length) ls.set("bt_cartelle", a.cartelle); } catch {} }
     /* tieni solo gli ultimi 60 */
@@ -573,7 +575,28 @@ function vHome() {
 }
 
 /* ---------- pagine (foto/PDF) ---------- */
-function nuovaCedola() { return { tipo: "cedola", pagine: [], pdfFile: null, testo: "", beneficiario: "", importo: "", scadenza: "", riferimento: "", iban: "", mese: meseCorr(), stato_cartella: "Non pagato", qr: false, analisi: false }; }
+function nuovaCedola() { return { tipo: "cedola", pagine: [], pdfFile: null, testo: "", beneficiario: "", importo: "", scadenza: "", riferimento: "", iban: "", mese: meseCorr(), stato_cartella: "Non pagato", qr: false, analisi: false, pagamento: "", pagScelto: false, raw_qr: "", beneficiario_qr: "" }; }
+/* pagamenti già presenti in Cagnani Manager (elenco mandato dal PC) */
+const pagamentiMese = ym => ((ls.get("bt_pagamenti", {}).mesi || {})[ym]) || [];
+function abbina(f) {
+  const lista = pagamentiMese(f.mese);
+  const ib = (f.iban || "").replace(/\s/g, "").toUpperCase();
+  const rf = (f.riferimento || "").replace(/\D/g, "");
+  const nome = norm((f.beneficiario || "") + " " + (f.beneficiario_qr || ""));
+  const imp = parseAmt(f.importo);
+  let best = null, bs = 0;
+  for (const p of lista) {
+    let s = 0;
+    if (ib && p.iban && p.iban === ib) s += 3;
+    const pr = String(p.riferimento || "").replace(/\D/g, "");
+    if (rf.length >= 12 && pr.length >= 12 && pr.slice(0, 12) === rf.slice(0, 12)) s += 3;
+    if (rf && pr === rf) s += 2;
+    for (const w of norm(p.descrizione).match(/[a-z]{4,}/g) || []) if (nome.includes(w)) { s += 2; break; }
+    if (!isNaN(imp) && Math.abs((p.importo || 0) - imp) < 0.005) s += 1;
+    if (s > bs) { bs = s; best = p; }
+  }
+  f.pagamento = best && bs >= 3 ? String(best.id) : "";
+}
 function nuovoDoc() { return { tipo: "documento", pagine: [], pdfFile: null, testo: "", cartella: "", proposte: [], descrizione: "", data: oggi(), analisi: false }; }
 
 function pagesBox(f) {
@@ -673,6 +696,7 @@ async function analizza(f, qr, canvas) {
       f.beneficiario = f.beneficiario || qr.beneficiario;
       if (qr.importo != null && !isNaN(qr.importo)) f.importo = fmtAmt(qr.importo);
       f.riferimento = fmtRif(qr.riferimento); f.iban = fmtIban(qr.iban);
+      f.raw_qr = qr.raw; f.beneficiario_qr = qr.beneficiario;
     } else {
       if (!t && canvas) f.testo = await ocr(canvas);
       const tt = f.testo || "";
@@ -680,6 +704,7 @@ async function analizza(f, qr, canvas) {
       f.iban = fmtIban(ibanDa(tt)); f.riferimento = fmtRif(rifDa(tt));
     }
     const sc = scadenzaDa(f.testo || ""); if (sc && !f.scadenza) f.scadenza = sc;
+    if (!f.pagScelto) abbina(f);
   } else {
     const { top } = proponiCartelle(t, cartelle());
     f.proposte = top; f.cartella = top[0] || "";
@@ -693,12 +718,19 @@ function busyLine(f) { return f.analisi === "corso" ? h("div", { class: "busy" }
 /* ---------- vista cedola ---------- */
 function nomeCedola(f) {
   const rif = (f.riferimento || "").trim();
+  const p = pagamentiMese(f.mese).find(x => String(x.id) === String(f.pagamento));
+  if (p) return (p.codice || "NN") + " Ced. " + p.descrizione + (rif ? " (N. " + rif + ")" : "") + " (CHF. " + (isNaN(parseAmt(f.importo)) ? "…" : fmtAmt(parseAmt(f.importo))) + ").pdf";
   return "NN Ced. " + (f.beneficiario || "…") + (rif ? " (N. " + rif + ")" : "") + " (CHF. " + (isNaN(parseAmt(f.importo)) ? "…" : fmtAmt(parseAmt(f.importo))) + ").pdf";
 }
 function vCedola() {
   const f = S.form;
   const inp = (id, key, extra = {}) => h("input", Object.assign({ id, value: f[key] || "", oninput: e => { f[key] = e.target.value; upd(); } }, extra));
-  const mesi = h("select", { id: "mese", class: "acc", onchange: e => { f.mese = e.target.value; upd(); } }, mesiScelta().map(m => h("option", { value: m.v, text: m.t })));
+  const mesi = h("select", { id: "mese", class: "acc", onchange: e => { f.mese = e.target.value; if (!f.pagScelto) abbina(f); else f.pagamento = ""; render(); } }, mesiScelta().map(m => h("option", { value: m.v, text: m.t })));
+  const lista = pagamentiMese(f.mese);
+  const pag = h("select", { id: "pag", class: "acc", onchange: e => { f.pagamento = e.target.value; f.pagScelto = true; const p = lista.find(x => String(x.id) === f.pagamento); if (p && p.cartella && STATI.includes(p.cartella)) { f.stato_cartella = p.cartella; stato.value = p.cartella; } upd(); } },
+    h("option", { value: "", text: "Nuovo pagamento" }),
+    lista.map(p => h("option", { value: String(p.id), text: (p.codice ? p.codice + " · " : "") + p.descrizione + " · " + fmtAmt(p.importo) + (p.ha_cedola ? " · ha già la cedola" : "") })));
+  pag.value = f.pagamento || "";
   mesi.value = f.mese;
   const stato = h("select", { id: "stato", class: "acc", onchange: e => { f.stato_cartella = e.target.value; upd(); } }, STATI.map(s => h("option", { value: s, text: s })));
   stato.value = f.stato_cartella;
@@ -718,6 +750,8 @@ function vCedola() {
       h("div", { class: "field" }, h("label", { for: "mese", text: "Mese" }), mesi),
       h("div", { class: "field" }, h("label", { for: "stato", text: "Cartella" }), stato)),
     h("div", { class: "small muted", text: "La scadenza non cambia la cartella: decidi tu mese e cartella." }),
+    h("div", { class: "field" }, h("label", { for: "pag", text: "Pagamento in Cagnani Manager" }), pag,
+      h("span", { class: "small muted", text: !lista.length ? "L'elenco dei pagamenti arriva dal PC dopo il primo controllo." : f.pagamento ? (f.pagScelto ? "Aggiorno questo pagamento: stesso numero, nuovo importo e riferimento. La vecchia cedola va in _sostituite." : "Trovato in automatico: aggiorno questo pagamento (stesso numero). Cambialo se non è giusto.") : "Ne creo uno nuovo con il primo numero libero del mese." })),
     h("div", { class: "field" }, h("label", { for: "rif", text: "Riferimento" }), inp("rif", "riferimento", { class: "mono", placeholder: "dal codice QR, facoltativo" })),
     f.iban ? h("div", { class: "small muted" }, "IBAN: ", h("span", { style: "font-family:var(--f-m)", text: f.iban })) : null,
     h("div", { class: "box" }, h("span", { class: "label", style: "color:var(--accent)", text: "Verrà salvata come" }), pth),
@@ -730,7 +764,7 @@ async function salvaCedola(e) {
   const imp = parseAmt(f.importo);
   if (!f.beneficiario.trim()) return toast("Inserisci il beneficiario."), $("#ben").focus();
   if (!(imp > 0)) return toast("Inserisci un importo valido."), $("#imp").focus();
-  const meta = { versione: 1, tipo: "cedola", beneficiario: f.beneficiario.trim(), importo: imp, scadenza: f.scadenza || "", riferimento: (f.riferimento || "").trim(), iban: (f.iban || "").replace(/\s/g, ""), mese: f.mese, stato_cartella: f.stato_cartella, da_qr: !!f.qr, creato: new Date().toISOString(), dispositivo: navigator.userAgent.slice(0, 80) };
+  const meta = { versione: 2, tipo: "cedola", pagamento_id: f.pagamento ? Number(f.pagamento) : null, raw_qr: f.raw_qr || "", beneficiario_qr: f.beneficiario_qr || "", beneficiario: f.beneficiario.trim(), importo: imp, scadenza: f.scadenza || "", riferimento: (f.riferimento || "").trim(), iban: (f.iban || "").replace(/\s/g, ""), mese: f.mese, stato_cartella: f.stato_cartella, da_qr: !!f.qr, creato: new Date().toISOString(), dispositivo: navigator.userAgent.slice(0, 80) };
   await salva(e.currentTarget, f, meta);
 }
 
